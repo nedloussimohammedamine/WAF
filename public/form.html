@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Board</title>
+  <link rel="stylesheet" href="styles2.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-title">Message Board</h1>
+
+    <form action="/send-message" method="post" class="message-form">
+      <label for="message">Message:</label>
+      <input type="text" id="message" name="message" required>
+      <button type="submit" class="action-button">Envoyer</button>
+    </form>
+
+    <div class="button-container">
+      <button onclick="executeScript()" class="action-button">Recharger la page</button>
+      <button onClick="getMessages()" class="action-button">Get messages</button>
+      <button onclick="executeSecurityChecks()" class="action-button">Verification Xss</button>
+    </div>
+
+    <div id="messages" class="messages-container"></div>
+  </div>
+
+  <script>
+    function getMessages() {
+      fetch('/get-messages')
+        .then(response => response.json())
+        .then(messages => {
+          const messagesDiv = document.getElementById('messages');
+          messagesDiv.innerHTML = '';
+
+          messages.forEach(message => {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message.message;
+            messagesDiv.appendChild(messageElement);
+          });
+        })
+        .catch(error => console.error('Error fetching messages:', error));
+    }
+
+    function executeScript() {
+      fetch('/execute-script')
+        .then(response => response.json())
+        .then(data => {
+          const scriptElement = document.createElement('script');
+          scriptElement.innerHTML = data.script;
+          document.body.appendChild(scriptElement);
+        })
+        .catch(error => console.error('Error executing script:', error));
+    }
+
+    function executeSecurityChecks() {
+      const message = document.getElementById('message').value;
+
+      fetch('/dashboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      })
+        .then(response => response.text())
+        .then(result => {
+          if (result.includes('Security checks passed')) {
+            console.log('Security checks passed, Xss query logic executed');
+          } else {
+            console.error('Security checks failed:', result);
+          }
+        })
+        .catch(error => console.error('Error executing security checks:', error));
+    }
+  </script>
+</body>
+</html>
